@@ -133,7 +133,7 @@ class AccountApi(object):
     def accounts_account_id_get(self, account_id, **kwargs):
         """
         get the account info by accountId
-        this endpoint returns account's info, include group,user,vnf.
+        this endpoint returns all account's info, include group,user,vnf.
 
         This method makes a synchronous HTTP request by default. To make an
         asynchronous HTTP request, please define a `callback` function

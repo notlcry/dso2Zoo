@@ -16,15 +16,13 @@ from .models.page_account import PageAccount
 from .models.vlan_so import VlanSO
 from .models.dso_config_so import DsoConfigSO
 from .models.public_ip_info_so import PublicIpInfoSO
-from .models.vpn_client_vo import VPNClientVO
-from .models.vpn_clients import VPNClients
-from .models.page_vpn_client import PageVPNClient
+from .models.vm_so import VmSO
 
 # import apis into sdk package
 from .apis.account_api import AccountApi
 from .apis.dsoconfig_api import DsoconfigApi
+from .apis.vm_api import VmApi
 from .apis.vlan_api import VlanApi
-from .apis.vpnclient_api import VpnclientApi
 
 # import ApiClient
 from .api_client import ApiClient

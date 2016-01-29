@@ -212,7 +212,7 @@ class VlanApi(object):
 
         :param callback function: The callback function
             for asynchronous request. (optional)
-        :param int account_id: account id (required)
+        :param str account_id: account id (required)
         :return: VlanSO
                  If the method is called asynchronously,
                  returns the request thread.

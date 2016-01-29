@@ -16,6 +16,4 @@ from .page_account import PageAccount
 from .vlan_so import VlanSO
 from .dso_config_so import DsoConfigSO
 from .public_ip_info_so import PublicIpInfoSO
-from .vpn_client_vo import VPNClientVO
-from .vpn_clients import VPNClients
-from .page_vpn_client import PageVPNClient
+from .vm_so import VmSO
