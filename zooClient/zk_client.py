@@ -27,6 +27,7 @@ class ZookClient(object):
         self.CONST_IP2USER_PATH = "Ip2User/"
         self.CONST_USER2ACCOUNT_PATH = "User2Account/"
         self.CONST_AID2ANAME_PATH = "Aid2Aname/"
+        self.CONST_VM_INFO_PATH = "VmInfo/"
 
     def create_accounts_path(self, accounts, **kwargs):
         # create accounts path
@@ -204,6 +205,18 @@ class ZookClient(object):
         # not used now
         # self.create_user2account_path(user2account)
 
+
+    def gen_vm_path(self, vm_info):
+        if not self.zk.exists(self.CONST_BASE_PATH + self.CONST_MAPPING_PATH):
+            self.zk.ensure_path(self.CONST_BASE_PATH + self.CONST_MAPPING_PATH)
+        vms_path = self.CONST_BASE_PATH + self.CONST_MAPPING_PATH + self.CONST_VM_INFO_PATH
+        self.zk.ensure_path(vms_path)
+        for vm in vm_info:
+            vm_node_path = vms_path + vm.manage_ip.replace('/', '-')
+            vm_dict = dict(id=vm.id, type=vm.type, status=vm.status)
+
+            self.zk.ensure_path(vm_node_path)
+            self.zk.set(vm_node_path, b"" + json.dumps(vm_dict).encode('utf8'))
 
     def create_mapping_accounts(self, accounts):
         aid2aname = {}

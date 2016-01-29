@@ -22,6 +22,9 @@ class ZookClient(object):
     def create_accountinfo_path(self, account_id, **kwargs):
         self.zk.ensure_path("/app/someservice")
 
+    def create_path(self, path, **kwargs):
+        self.zk.ensure_path(path)
+
     def stop(self):
         # In the end, stop it
         self.zk.stop()
@@ -29,7 +32,8 @@ class ZookClient(object):
 if __name__ == "__main__":
     try:
         client = ZookClient()
-        client.create_accounts_path(u'于'.encode('utf8'))
+        # client.create_accounts_path("/test/has//32/")
+        client.create_path("/test-123")
         print "hold"
     except Exception as exp:
         print exp.message

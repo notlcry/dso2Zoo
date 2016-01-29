@@ -5,12 +5,14 @@ import time
 from swagger_client.apis import account_api
 from swagger_client.apis import vpnclient_api
 from zooClient import zk_client
+from swagger_client.apis import vm_api
 
 
 def full_sync():
     try:
         dso_account_client = account_api.AccountApi()
         dso_vpn_client = vpnclient_api.VpnclientApi()
+        dso_vm_client = vm_api.VmApi()
 
         # get 1 page count 100 for now, must for page request long term
         rtn = dso_account_client.accounts_get(1, 100)
@@ -33,6 +35,10 @@ def full_sync():
             client.create_accountinfo_path(account_info)
             client.gen_mapping_pre_account(account_info, vpn_clients)
 
+            vm_info = dso_vm_client.vm_account_id_get(account.id)
+            client.gen_vm_path(vm_info)
+
+
         client.stopZooK()
 
     except Exception as exp:
@@ -42,4 +48,4 @@ def full_sync():
 if __name__ == "__main__":
     while True:
         full_sync()
-        time.sleep(10)
+        time.sleep(60)
