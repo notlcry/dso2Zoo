@@ -33,7 +33,7 @@ if __name__ == "__main__":
     try:
         client = ZookClient()
         # client.create_accounts_path("/test/has//32/")
-        client.create_path("/test-123")
+        client.create_path("/tsa/1/2")
         print "hold"
     except Exception as exp:
         print exp.message
