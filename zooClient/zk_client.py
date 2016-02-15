@@ -7,13 +7,14 @@ import json
 
 class ZookClient(object):
     def __init__(self, zookeeper_host=None):
+
         logging.basicConfig()
         # Create a client and start it
         if zookeeper_host is None:
             zookeeper_host = "localhost:2181"
         self.zk = KazooClient(zookeeper_host)
         self.zk.start()
-
+        self.tran = self.zk.transaction()
         self.CONST_BASE_PATH = "/dso/"
         self.CONST_ACCOUNTS_PATH = "accounts/"
         self.CONST_GROUPS_PATH = "groups/"
@@ -25,6 +26,7 @@ class ZookClient(object):
 
         self.CONST_MAPPING_PATH = "Mapping/"
         self.CONST_IP2USER_PATH = "Ip2User/"
+        self.CONST_IP2VMPATH = "Ip2Vm/"
         self.CONST_USER2ACCOUNT_PATH = "User2Account/"
         self.CONST_AID2ANAME_PATH = "Aid2Aname/"
         self.CONST_VM_INFO_PATH = "VmInfo/"
@@ -35,14 +37,14 @@ class ZookClient(object):
         self.zk.ensure_path(accounts_path)
 
         for account in accounts:
-            path = accounts_path + account.account_name
-            # path = accounts_path + account.id
+            # path = accounts_path + account.account_name
+            path = accounts_path + account.id
             account_val = account.to_str()
             self.zk.ensure_path(path)
             self.zk.set(path, b"" + account_val.encode('utf8'))
 
     def create_accountinfo_path(self, account_info, **kwargs):
-        account_path = self.CONST_BASE_PATH + self.CONST_ACCOUNTS_PATH + account_info.account_name + "/"
+        account_path = self.CONST_BASE_PATH + self.CONST_ACCOUNTS_PATH + account_info.id + "/"
         if not self.zk.exists(account_path):
             print "Path" + account_path + " does not exist."
 
@@ -229,6 +231,9 @@ class ZookClient(object):
             self.zk.set(ip_path, b"" + json.dumps(ip2user[ip]).encode('utf8'))
 
     def gen_mapping_pre_account(self, account_info, vpn_clients):
+        self.zk.ensure_path(self.CONST_BASE_PATH + self.CONST_MAPPING_PATH)
+        self.zk.ensure_path(self.CONST_BASE_PATH + self.CONST_MAPPING_PATH + self.CONST_IP2VMPATH)
+
         user2account = {}
         ip2user = {}
         for group in account_info.groups:
@@ -252,6 +257,8 @@ class ZookClient(object):
         # not used now
         # self.create_user2account_path(user2account)
 
+        # create ip2vm
+        self.create_ip2vm_path(account_info)
 
     def gen_vm_path(self, vm_info):
         if not self.zk.exists(self.CONST_BASE_PATH + self.CONST_MAPPING_PATH):
@@ -271,35 +278,79 @@ class ZookClient(object):
             aid2aname[account.id] = account.account_name
         self.create_aid2aname_path(aid2aname)
 
-    def gen_services_summay(self,  path, services):
+    def gen_services_summay(self, path, services):
         services_data = {}
         for service_item in services:
             instance_array = ""
             for instance in service_item.instances:
                 instance_data = "<table class=\"table\">" \
                                 "<tr>" \
-                                    "<td>manageip</td><td>" + self.check_none(instance.manageip) + "</td>" \
-                                "</tr>" \
-                                "<tr>" \
-                                    "<td>publicip</td><td>" + self.check_none(instance.publicip) + "</td>" \
-                                "</tr>" \
-                                "<tr>" \
-                                    "<td>publicgateway</td><td>" + self.check_none(instance.publicgateway) + "</td>" \
-                                "</tr>" \
-                                "<tr>" \
-                                    "<td>publicnetmask</td><td>" + self.check_none(instance.publicnetmask) + "</td>" \
-                                "</tr>" \
-                                "<tr>" \
-                                    "<td>serviceip</td><td>" + self.check_none(instance.serviceip) + "</td>" \
-                                "</tr>" \
-                                "<tr><td>status</td><td>" + self.check_none(instance.status) + "</td>" \
-                                "</tr>" \
-                                "</table>"
+                                "<td>manageip</td><td>" + self.check_none(instance.manageip) + "</td>" \
+                                                                                               "</tr>" \
+                                                                                               "<tr>" \
+                                                                                               "<td>publicip</td><td>" + self.check_none(
+                    instance.publicip) + "</td>" \
+                                         "</tr>" \
+                                         "<tr>" \
+                                         "<td>publicgateway</td><td>" + self.check_none(
+                    instance.publicgateway) + "</td>" \
+                                              "</tr>" \
+                                              "<tr>" \
+                                              "<td>publicnetmask</td><td>" + self.check_none(
+                    instance.publicnetmask) + "</td>" \
+                                              "</tr>" \
+                                              "<tr>" \
+                                              "<td>serviceip</td><td>" + self.check_none(instance.serviceip) + "</td>" \
+                                                                                                               "</tr>" \
+                                                                                                               "<tr><td>status</td><td>" + self.check_none(
+                    instance.status) + "</td>" \
+                                       "</tr>" \
+                                       "</table>"
 
                 instance_array += instance_data + "\n"
             services_data[service_item.servicename] = instance_array
 
         self.zk.set(path, b"" + json.dumps(services_data).encode('utf8'))
+
+    def create_ip2vm_path(self, account_info):
+
+        base_path = self.CONST_BASE_PATH + self.CONST_MAPPING_PATH + self.CONST_IP2VMPATH
+        path = base_path + account_info.id + "/"
+        # self.zk.ensure_path(path)
+
+        account_data = dict(accountname=account_info.account_name)
+        self.zk.create(path, b"" + json.dumps(account_data).encode('utf8'))
+
+        self.zk.ensure_path(path)
+        for service_item in account_info.services:
+            service_name = service_item.servicename
+            for instance in service_item.instances:
+                if instance.manageip is None:
+                    continue
+                manageip = instance.manageip
+                if instance.manageip.__contains__('/'):
+                    manageip =manageip[: manageip.find('/')]
+
+                vm_path = path + manageip
+                host_name = account_info.id + '-' + service_name
+
+                instance_data = dict(id=instance.id,
+                                     mac=instance.mac,
+                                     manageip=instance.manageip,
+                                     publicip=instance.publicip,
+                                     publicgateway=instance.publicgateway,
+                                     publicnetmask=instance.publicnetmask,
+                                     serviceip=instance.serviceip,
+                                     status=instance.status,
+                                     servicename=service_name,
+                                     hostname=host_name
+                                     )
+                # self.zk.ensure_path(vm_path)
+                self.zk.create(vm_path, b"" + json.dumps(instance_data).encode('utf8'))
+
+    def commit(self):
+        self.tran.commit()
+
 
     def stopZooK(self):
         # In the end, stop it
