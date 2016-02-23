@@ -41,8 +41,8 @@ def full_sync():
             # client.gen_vm_path(vm_info)
 
         start_sync_zoo = datetime.now()
-        # client = zk_client.ZookClient("10.74.113.102:2181")
-        client = zk_client.ZookClient("localhost:2181")
+        client = zk_client.ZookClient("10.74.113.102:2181")
+        # client = zk_client.ZookClient("localhost:2181")
         client.delete_dso_path()
         client.create_accounts_path(accounts)
 

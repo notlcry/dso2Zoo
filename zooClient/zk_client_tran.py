@@ -31,20 +31,20 @@ class ZookClient(object):
         self.CONST_USER2ACCOUNT_PATH = "User2Account/"
         self.CONST_AID2ANAME_PATH = "Aid2Aname/"
         self.CONST_VM_INFO_PATH = "VmInfo/"
-
         self.CONST_HOST_MAPPING = dict(vrouter='fedora', dns='ubuntu', firewall='ubuntu', ipsecvpn='centos', vpc='ubuntu')
 
-    def create_accounts_path(self, accounts, **kwargs):
-        # create accounts path
-        accounts_path = self.CONST_BASE_PATH + self.CONST_ACCOUNTS_PATH
-        self.zk.ensure_path(accounts_path)
+        # create constant base path
 
-        for account in accounts:
-            # path = accounts_path + account.account_name
-            path = accounts_path + account.id
-            account_val = account.to_str()
-            self.zk.ensure_path(path)
-            self.zk.set(path, b"" + account_val.encode('utf8'))
+        self.zk.ensure_path(self.CONST_BASE_PATH)
+
+        # create accounts path
+        self.zk.ensure_path(self.CONST_BASE_PATH + self.CONST_ACCOUNTS_PATH)
+
+        # create mapping path
+        self.zk.ensure_path(self.CONST_BASE_PATH + self.CONST_MAPPING_PATH)
+        self.zk.ensure_path(self.CONST_BASE_PATH + self.CONST_MAPPING_PATH + self.CONST_IP2USER_PATH)
+        self.zk.ensure_path(self.CONST_BASE_PATH + self.CONST_MAPPING_PATH + self.CONST_IP2VMPATH)
+        self.zk.ensure_path(self.CONST_BASE_PATH + self.CONST_MAPPING_PATH + self.CONST_MAC2USER_PATH)
 
     def create_account_path(self, account_info):
         """
@@ -105,9 +105,8 @@ class ZookClient(object):
             self.create_instance_path(instances_path, instance_item, service.servicename)
 
     def create_instance_path(self, parent_path, instance, service_name):
-
         if instance.id is None:
-            print "instance.id is None"
+            print "instance.id is None, maybe is vpc, and vpc is fail"
             return
         instance_path = parent_path + instance.id
         # instance_data = "id: " + instance.id + \
@@ -248,16 +247,19 @@ class ZookClient(object):
 
     def create_ip2user_path(self, account_info, ip2user):
 
-        if not self.zk.exists(self.CONST_BASE_PATH + self.CONST_MAPPING_PATH):
-            self.zk.ensure_path(self.CONST_BASE_PATH + self.CONST_MAPPING_PATH)
-
         ip2user_path = self.CONST_BASE_PATH + self.CONST_MAPPING_PATH + self.CONST_IP2USER_PATH
-        self.zk.ensure_path(ip2user_path)
 
         account_path = ip2user_path + account_info.id + "/"
-        self.zk.ensure_path(account_path)
+        tran = self.zk.transaction()
+
+        # delete childern
+        if self.zk.exists(account_path):
+            children = self.zk.get_children(account_path)
+            for e in children:
+                tran.delete(account_path + e)
+            tran.delete(account_path)
         account_data = {"account_name": account_info.account_name}
-        self.zk.set(account_path, b"" + json.dumps(account_data).encode('utf8'))
+        tran.create(account_path, b"" + json.dumps(account_data).encode('utf8'))
 
         for ip in ip2user.keys():
             if ip is None:
@@ -265,18 +267,23 @@ class ZookClient(object):
                 continue
             ip_path = account_path + ip
 
-            self.zk.ensure_path(ip_path)
-            self.zk.set(ip_path, b"" + json.dumps(ip2user[ip]).encode('utf8'))
+            tran.create(ip_path, b"" + json.dumps(ip2user[ip]).encode('utf8'))
+        tran.commit()
 
     def create_mac2user_path(self, account_info, mac2user):
 
         mac2user_path = self.CONST_BASE_PATH + self.CONST_MAPPING_PATH + self.CONST_MAC2USER_PATH
-        self.zk.ensure_path(mac2user_path)
-
         account_path = mac2user_path + account_info.id + "/"
-        self.zk.ensure_path(account_path)
+
+        tran = self.zk.transaction()
+        # delete childern
+        if self.zk.exists(account_path):
+            children = self.zk.get_children(account_path)
+            for e in children:
+                tran.delete(account_path + e)
+            tran.delete(account_path)
         account_data = {"account_name": account_info.account_name}
-        self.zk.set(account_path, b"" + json.dumps(account_data).encode('utf8'))
+        tran.create(account_path, b"" + json.dumps(account_data).encode('utf8'))
 
         for mac in mac2user.keys():
             if mac is None:
@@ -284,13 +291,49 @@ class ZookClient(object):
                 continue
             ip_path = account_path + mac
 
-            self.zk.ensure_path(ip_path)
-            self.zk.set(ip_path, b"" + json.dumps(mac2user[mac]).encode('utf8'))
+            tran.create(ip_path, b"" + json.dumps(mac2user[mac]).encode('utf8'))
+        tran.commit()
 
-    def gen_mapping_pre_account(self, account_info, vpn_clients):
-        self.zk.ensure_path(self.CONST_BASE_PATH + self.CONST_MAPPING_PATH)
-        self.zk.ensure_path(self.CONST_BASE_PATH + self.CONST_MAPPING_PATH + self.CONST_IP2VMPATH)
-        self.zk.ensure_path(self.CONST_BASE_PATH + self.CONST_MAPPING_PATH + self.CONST_MAC2USER_PATH)
+    def create_ip2vm_path(self, account_info):
+
+        instance_dict = self.get_instances(account_info)
+
+        zoo_instances = {}
+
+        base_path = self.CONST_BASE_PATH + self.CONST_MAPPING_PATH + self.CONST_IP2VMPATH
+        account_path = base_path + account_info.id + "/"
+
+        account_data = dict(accountname=account_info.account_name)
+        tran = self.zk.transaction()
+
+        # delete not use node
+        if self.zk.exists(account_path):
+            # update account
+            if self.zk.get(account_path)[0] != json.dumps(account_data):
+                tran.set_data(account_path, b"" + json.dumps(account_data).encode('utf8'))
+
+            children = self.zk.get_children(account_path)
+            for e in children:
+                if instance_dict.get(e, None) is None:
+                    tran.delete(account_path + e)
+                else:
+                    zoo_vm = json.loads(self.zk.get(account_path + e)[0])
+                    zoo_instances[e] = zoo_vm
+        else:
+            tran.create(account_path, b"" + json.dumps(account_data).encode('utf8'))
+
+
+
+        # update vms
+        for ip, vm in instance_dict:
+            if zoo_instances.get(ip, None) is not None:
+                if not self.same_instance(vm, zoo_instances.get(ip)):
+                    tran.set(account_path + ip, b"" + json.dumps(vm).encode('utf8'))
+            else:
+                tran.create(account_path + ip, b"" + json.dumps(vm).encode('utf8'))
+        tran.commit()
+
+    def sync_mapping_pre_account(self, account_info, vpn_clients):
 
         user2account = {}
         ip2user = {}
@@ -385,16 +428,15 @@ class ZookClient(object):
 
         self.zk.set(path, b"" + json.dumps(services_data).encode('utf8'))
 
-    def create_ip2vm_path(self, account_info):
 
-        base_path = self.CONST_BASE_PATH + self.CONST_MAPPING_PATH + self.CONST_IP2VMPATH
-        path = base_path + account_info.id + "/"
-        # self.zk.ensure_path(path)
 
-        account_data = dict(accountname=account_info.account_name)
-        self.zk.create(path, b"" + json.dumps(account_data).encode('utf8'))
+    def get_all_account(self):
+        accounts_path = self.CONST_BASE_PATH + self.CONST_ACCOUNTS_PATH
+        account_list = self.zk.get_children(accounts_path)
+        return account_list
 
-        self.zk.ensure_path(path)
+    def get_instances(self, account_info):
+        instances_dict = {}
         for service_item in account_info.services:
             service_name = service_item.servicename
             for instance in service_item.instances:
@@ -404,7 +446,6 @@ class ZookClient(object):
                 if instance.manageip.__contains__('/'):
                     manageip =manageip[: manageip.find('/')]
 
-                vm_path = path + manageip
                 host_name = account_info.id + '-' + service_name
 
                 instance_data = dict(id=instance.id,
@@ -418,21 +459,18 @@ class ZookClient(object):
                                      servicename=service_name,
                                      hostname=host_name
                                      )
-                # self.zk.ensure_path(vm_path)
-                self.zk.create(vm_path, b"" + json.dumps(instance_data).encode('utf8'))
-
-    def get_all_account(self):
-        accounts_path = self.CONST_BASE_PATH + self.CONST_ACCOUNTS_PATH
-        account_list = self.zk.get_children(accounts_path)
-        return account_list
+                instances_dict[manageip] = instance_data
+        return instances_dict
 
     def commit(self):
         self.tran.commit()
 
-
     def stopZooK(self):
         # In the end, stop it
         self.zk.stop()
+
+    def same_instance(self, vm0, vm1):
+        return vm0.get('id') == vm1.get('id') and vm0.get('hostname') == vm1.get('hostname')
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 import time
 from kazoo.client import KazooClient
 import logging
-
+import json
 
 
 class ZookClient(object):
@@ -39,20 +39,25 @@ class ZookClient(object):
         print "commit"
 
 
+
+
     def stop(self):
         # In the end, stop it
         self.zk.stop()
 
 if __name__ == "__main__":
     try:
-        # while True:
-        #     client = ZookClient()
-        #     # client.create_accounts_path("/test/has//32/")
-        #     val = client.get_data("/dso/Mapping/Ip2Vm")
-        #     print val
-        #     time.sleep(45)
+        count = 0;
         client = ZookClient()
-        client.test_tran()
+        while True:
+            # client.create_accounts_path("/test/has//32/")
+            val = client.get_data("/dso/Mapping/Ip2User/0c9ec421-bf17-41e5-ae1b-5e78790ce8dc")
+            data = json.loads(val[0])
+            print data["account_name"]
+            time.sleep(0.1)
+            count += 1
+            if count % 1000 == 0:
+                print count
     except Exception as exp:
         print exp.message
 

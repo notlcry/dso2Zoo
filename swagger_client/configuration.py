@@ -56,8 +56,8 @@ class Configuration(object):
         Constructor
         """
         # Default Base url
-        # self.host = "http://10.74.113.56:8282/dso/sa"
-        self.host = "http://localhost:8282/dso/sa"
+        self.host = "http://10.74.113.56:8282/dso/sa"
+        # self.host = "http://localhost:8282/dso/sa"
         # Default api client
         self.api_client = None
         # Temp file folder for downloading files
