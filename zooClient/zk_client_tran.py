@@ -332,7 +332,7 @@ class ZookClient(object):
         for ip, vm in instance_dict.iteritems():
             if zoo_instances.get(ip, None) is not None:
                 if not self.same_instance(vm, zoo_instances.get(ip)):
-                    tran.set(account_path + ip, b"" + json.dumps(vm).encode('utf8'))
+                    tran.set_data(account_path + ip, b"" + json.dumps(vm).encode('utf8'))
             else:
                 tran.create(account_path + ip, b"" + json.dumps(vm).encode('utf8'))
         tran.commit()
