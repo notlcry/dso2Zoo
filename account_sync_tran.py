@@ -49,7 +49,7 @@ if __name__ == "__main__":
     while 1:
         start = time.time()
         sync = InventorySync()
-        sync.account_sync('0c9ec421-bf17-41e5-ae1b-5e78790ce8dc', '10.74.113.102:2181')
+        sync.account_sync('0c9ec421-bf17-41e5-ae1b-5e78790ce8dc', 'localhost:2181')
         used = time.time() - start
         print "sync finish, use %d sec " % used
         time.sleep(600)

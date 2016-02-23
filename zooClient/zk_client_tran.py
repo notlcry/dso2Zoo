@@ -31,6 +31,7 @@ class ZookClient(object):
         self.CONST_USER2ACCOUNT_PATH = "User2Account/"
         self.CONST_AID2ANAME_PATH = "Aid2Aname/"
         self.CONST_VM_INFO_PATH = "VmInfo/"
+        self.CONST_DSO_PATH = "dso/"
         self.CONST_HOST_MAPPING = dict(vrouter='fedora', dns='ubuntu', firewall='ubuntu', ipsecvpn='centos', vpc='ubuntu')
 
         # create constant base path
@@ -45,6 +46,11 @@ class ZookClient(object):
         self.zk.ensure_path(self.CONST_BASE_PATH + self.CONST_MAPPING_PATH + self.CONST_IP2USER_PATH)
         self.zk.ensure_path(self.CONST_BASE_PATH + self.CONST_MAPPING_PATH + self.CONST_IP2VMPATH)
         self.zk.ensure_path(self.CONST_BASE_PATH + self.CONST_MAPPING_PATH + self.CONST_MAC2USER_PATH)
+
+        # create dso path
+        dso_path = self.CONST_BASE_PATH + self.CONST_MAPPING_PATH +self.CONST_IP2VMPATH + self.CONST_DSO_PATH
+        self.zk.ensure_path(dso_path)
+        self.zk.ensure_path(dso_path + "172.19.0.101")
 
     def create_account_path(self, account_info):
         """
@@ -322,10 +328,8 @@ class ZookClient(object):
         else:
             tran.create(account_path, b"" + json.dumps(account_data).encode('utf8'))
 
-
-
         # update vms
-        for ip, vm in instance_dict:
+        for ip, vm in instance_dict.iteritems():
             if zoo_instances.get(ip, None) is not None:
                 if not self.same_instance(vm, zoo_instances.get(ip)):
                     tran.set(account_path + ip, b"" + json.dumps(vm).encode('utf8'))
@@ -443,6 +447,8 @@ class ZookClient(object):
                 if instance.manageip is None:
                     continue
                 manageip = instance.manageip
+                if manageip is None:
+                    continue
                 if instance.manageip.__contains__('/'):
                     manageip =manageip[: manageip.find('/')]
 
