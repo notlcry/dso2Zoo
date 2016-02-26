@@ -15,7 +15,7 @@ VERSION = "1.0.0"
 # prerequisite: setuptools
 # http://pypi.python.org/pypi/setuptools
 
-REQUIRES = ["urllib3 >= 1.10", "six >= 1.9", "certifi", "python-dateutil", "kazoo.client"]
+REQUIRES = ["urllib3 >= 1.10", "six >= 1.9", "certifi", "python-dateutil", "kazoo"]
 
 setup(
     name=NAME,
