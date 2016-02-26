@@ -47,10 +47,14 @@ class ZookClient(object):
         self.zk.ensure_path(self.CONST_BASE_PATH + self.CONST_MAPPING_PATH + self.CONST_IP2VMPATH)
         self.zk.ensure_path(self.CONST_BASE_PATH + self.CONST_MAPPING_PATH + self.CONST_MAC2USER_PATH)
 
-        # create dso path
+        # create dso path in mapping ip2vm for jinzhou use
         dso_path = self.CONST_BASE_PATH + self.CONST_MAPPING_PATH +self.CONST_IP2VMPATH + self.CONST_DSO_PATH
         self.zk.ensure_path(dso_path)
-        self.zk.ensure_path(dso_path + "172.19.0.101")
+        self.zk.set(dso_path, b"" + '{"accountname": "dso"}')
+
+        dso_ip_path = 'dso_path + "172.19.0.101"'
+        self.zk.ensure_path(dso_ip_path)
+        self.zk.set(dso_ip_path, b"" + '{"hostname": "dso-server", "manageip": "172.19.0.101", "servicename": "dso"}')
 
     def create_account_path(self, account_info):
         """

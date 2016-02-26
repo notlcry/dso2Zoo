@@ -1,7 +1,6 @@
 # coding: utf-8
 __author__ = 'huiyu'
 
-from datetime import datetime
 import time
 from swagger_client.apis import account_api
 import account_sync_tran
@@ -45,6 +44,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) < 2:
         print "pls enter zookeeper host"
+        print "usage: python full_sync_accounts_tran.py localhost:2181"
         exit(0)
 
     zookeeper_host = sys.argv[1]
