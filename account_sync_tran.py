@@ -8,7 +8,7 @@ from swagger_client.apis import vpnclient_api
 from zooClient import zk_client_tran
 import logging
 import traceback
-
+import sys
 
 class InventorySync:
 
@@ -46,10 +46,15 @@ class InventorySync:
 
 
 if __name__ == "__main__":
-    while 1:
-        start = time.time()
-        sync = InventorySync()
-        sync.account_sync('0c9ec421-bf17-41e5-ae1b-5e78790ce8dc', 'localhost:2181')
-        used = time.time() - start
-        print "sync finish, use %d sec " % used
-        time.sleep(600)
+
+    if len(sys.argv) < 3:
+        print "pls enter accountid and zookeeper host"
+        print "usage: python account_sync_tran.py accountID localhost:2181"
+        exit(0)
+    account_id = sys.argv[1]
+    zookeeper_host = sys.argv[2]
+    start = time.time()
+    sync = InventorySync()
+    sync.account_sync(account_id, zookeeper_host)
+    used = time.time() - start
+    print "sync finish, use %d sec " % used
