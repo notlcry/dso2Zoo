@@ -3,7 +3,7 @@
 import sys
 from setuptools import setup, find_packages
 
-NAME = "swagger_client"
+NAME = "dsoSyncZoo"
 VERSION = "1.0.0"
 
 
@@ -15,7 +15,7 @@ VERSION = "1.0.0"
 # prerequisite: setuptools
 # http://pypi.python.org/pypi/setuptools
 
-REQUIRES = ["urllib3 >= 1.10", "six >= 1.9", "certifi", "python-dateutil"]
+REQUIRES = ["urllib3 >= 1.10", "six >= 1.9", "certifi", "python-dateutil", "kazoo.client"]
 
 setup(
     name=NAME,
