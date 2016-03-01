@@ -44,7 +44,8 @@ class InstanceSO(object):
             'publicgateway': 'str',
             'publicnetmask': 'str',
             'serviceip': 'str',
-            'status': 'str'
+            'status': 'str',
+            'group_id': 'str'
         }
 
         self.attribute_map = {
@@ -55,7 +56,8 @@ class InstanceSO(object):
             'publicgateway': 'publicgateway',
             'publicnetmask': 'publicnetmask',
             'serviceip': 'serviceip',
-            'status': 'status'
+            'status': 'status',
+            'group_id': 'groupId'
         }
 
         self._id = None
@@ -66,6 +68,7 @@ class InstanceSO(object):
         self._publicnetmask = None
         self._serviceip = None
         self._status = None
+        self._group_id = None
 
     @property
     def id(self):
@@ -243,6 +246,28 @@ class InstanceSO(object):
         """
         self._status = status
 
+    @property
+    def group_id(self):
+        """
+        Gets the group_id of this InstanceSO.
+
+
+        :return: The group_id of this InstanceSO.
+        :rtype: str
+        """
+        return self._group_id
+
+    @group_id.setter
+    def group_id(self, group_id):
+        """
+        Sets the group_id of this InstanceSO.
+
+
+        :param group_id: The group_id of this InstanceSO.
+        :type: str
+        """
+        self._group_id = group_id
+
     def to_dict(self):
         """
         Returns the model properties as a dict
@@ -287,3 +312,6 @@ class InstanceSO(object):
         """
         return not self == other
 
+    def to_kafka(self):
+        result = dict(instanceID=self._id, groupID=self._group_id)
+        return result

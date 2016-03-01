@@ -10,12 +10,8 @@ import logging
 import traceback
 import sys
 
-class InventorySync:
 
-    def __init__(self):
-        logging.basicConfig()
-
-    def account_sync(self, account_id, zookeeper_host):
+def account_sync(account_id, zookeeper_host):
         try:
             dso_account_client = account_api.AccountApi()
             dso_vpn_client = vpnclient_api.VpnclientApi()
@@ -54,7 +50,6 @@ if __name__ == "__main__":
     account_id = sys.argv[1]
     zookeeper_host = sys.argv[2]
     start = time.time()
-    sync = InventorySync()
-    sync.account_sync(account_id, zookeeper_host)
+    account_sync(account_id, zookeeper_host)
     used = time.time() - start
     print "sync finish, use %d sec " % used
