@@ -404,6 +404,9 @@
                 },
                 "domain": {
                     "type": "string"
+                },
+                "type": {
+                    "type": "string"
                 }
             }
         },
@@ -478,6 +481,9 @@
                     "type": "string"
                 },
                 "status": {
+                    "type": "string"
+                },
+                "groupId": {
                     "type": "string"
                 }
             }
